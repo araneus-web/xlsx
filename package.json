@@ -10,22 +10,23 @@
     "lint": "eslint --fix src test",
     "test": "jest"
   },
-  "keywords": [],
-  "author": "CJ R. <cj@null.computer> (https://w3cj.now.sh)",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/w3cj/express-api-starter.git"
+  "engines": {
+    "node": "14.x"
   },
+  "keywords": [],
   "license": "MIT",
   "dependencies": {
+    "axios": "^1.4.0",
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
     "ffmpeg-static": "^5.1.0",
     "fluent-ffmpeg": "^2.1.2",
+    "form-data": "^4.0.0",
     "helmet": "^6.1.5",
     "morgan": "^1.10.0",
     "multer": "^1.4.5-lts.1",
+    "node-fetch": "^3.3.1",
     "p-queue": "^7.3.4"
   },
   "devDependencies": {

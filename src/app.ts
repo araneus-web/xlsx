@@ -4,6 +4,9 @@ import multer from 'multer';
 
 import ffmpeg from 'fluent-ffmpeg';
 import fs from 'fs';
+import axios from 'axios';
+
+const FormData = require("form-data");
 
 require('dotenv').config();
 
@@ -30,38 +33,62 @@ app.post('/save', upload.fields([{
 }, {
   name: 'annotations', maxCount: 1,
 }]), async (req, res) => {
-  const files = req.files as { [name in FieldNames]: Express.Multer.File[] };
-  if (files) {
-    const inputVideoName = 'video';
-    const outputVideoName = 'result.mp4';
-    res.set('Content-Type', 'video/mp4');
-
-    const videoBuffer = files.video[0].buffer;
-
-    fs.writeFileSync(inputVideoName, videoBuffer);
+  try {
     
-    await new Promise((resolve, reject) => {
-      ffmpeg()
-        .input(inputVideoName)
-        .outputFormat('mp4')
-        .saveToFile(outputVideoName)
-        .on('error', () => {
-          reject();
-        })
-        .on('end', () => {
-          resolve(null);
-        });
-    });
+    const files = req.files as { [name in FieldNames]: Express.Multer.File[] };
+    if (files) {
+      const inputVideoName = 'video';
+      const outputVideoName = 'result.mp4';
 
-    const result = fs.readFileSync(outputVideoName);
-    res.end(result, 'binary');
-    fs.unlinkSync(inputVideoName);
-    fs.unlinkSync(outputVideoName);
+      const videoBuffer = files.video[0].buffer;
+  
+      fs.writeFileSync(inputVideoName, videoBuffer);
+      
+      await new Promise((resolve, reject) => {
+        ffmpeg()
+          .input(inputVideoName)
+          .outputFormat('mp4')
+          .saveToFile(outputVideoName)
+          .on('error', () => {
+            reject();
+          })
+          .on('end', () => {
+            resolve(null);
+          });
+      });
+  
+      const result = fs.readFileSync(outputVideoName);
+      const data = new FormData();
 
-  } else {
-    res.status(500);
+      data.append('files', result, 'story.mp4');
+
+      fs.unlinkSync(inputVideoName);
+      fs.unlinkSync(outputVideoName);
+
+      await axios.post('https://backend-clients.sugarinter.media/user/story', data, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          authorization: req.headers.authorization || '',
+        },
+      });
+  
+  
+      res.json({
+        message: '🦄🌈✨👋🌎🌍🌏✨🌈🦄',
+      });
+  
+    } else {
+      res.status(500);
+      res.json({
+        message: 'Internal error',
+      });
+    }
+  } catch (error: any) {
+    console.log(error);
+    
+    res.status(error.status ?? 500);
     res.json({
-      message: 'Internal error',
+      message: error.message ?? 'Internal error',
     });
   }
 });
