@@ -10,7 +10,7 @@
     "lint": "eslint --fix src test"
   },
   "engines": {
-    "node": "18.x"
+    "node": "16.x"
   },
   "keywords": [],
   "license": "MIT",
