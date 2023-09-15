@@ -1,17 +1,12 @@
 import express from 'express';
 import cors from 'cors';
 import multer from 'multer';
-
-import ffmpeg from 'fluent-ffmpeg';
+import xlsx from 'xlsx';
 import fs from 'fs';
-import axios from 'axios';
 
-const FormData = require("form-data");
+const FormData = require('form-data');
 
 require('dotenv').config();
-
-const pathToFfmpeg = require('ffmpeg-static');
-ffmpeg.setFfmpegPath(pathToFfmpeg);
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -23,59 +18,20 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-enum FieldNames {
-  Video = 'video',
-  Annotations = 'annotations',
-}
-
-app.post('/save', upload.fields([{
-  name: 'video', maxCount: 1,
-}, {
-  name: 'annotations', maxCount: 1,
-}]), async (req, res) => {
+app.post('/xlsx2json', upload.single('xlsx'), async (req, res) => {
   try {
     
-    const files = req.files as { [name in FieldNames]: Express.Multer.File[] };
-    if (files) {
-      const inputVideoName = 'video';
-      const outputVideoName = 'result.mp4';
+    const xlsxFile = req.file;
 
-      const videoBuffer = files.video[0].buffer;
-  
-      fs.writeFileSync(inputVideoName, videoBuffer);
-      
-      await new Promise((resolve, reject) => {
-        ffmpeg()
-          .input(inputVideoName)
-          .outputFormat('mp4')
-          .saveToFile(outputVideoName)
-          .on('error', () => {
-            reject();
-          })
-          .on('end', () => {
-            resolve(null);
-          });
-      });
-  
-      const result = fs.readFileSync(outputVideoName);
-      const data = new FormData();
+    if (xlsxFile) {
 
-      data.append('files', result, 'story.mp4');
-
-      fs.unlinkSync(inputVideoName);
-      fs.unlinkSync(outputVideoName);
-
-      await axios.post('https://backend-clients.sugarinter.media/user/story', data, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          authorization: req.headers.authorization || '',
-        },
-      });
+      const inputFileName = 'file.xslx';
+      const buffer = xlsxFile.buffer;
   
-  
-      res.json({
-        message: '🦄🌈✨👋🌎🌍🌏✨🌈🦄',
-      });
+      fs.writeFileSync(inputFileName, buffer);
+      const wb = xlsx.readFile(inputFileName);
+      fs.unlinkSync(inputFileName);
+      res.json(xlsx.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]));
   
     } else {
       res.status(500);
