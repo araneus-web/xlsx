@@ -4,8 +4,6 @@ import multer from 'multer';
 import xlsx from 'xlsx';
 import fs from 'fs';
 
-const FormData = require('form-data');
-
 require('dotenv').config();
 
 const upload = multer({
