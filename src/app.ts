@@ -3,6 +3,7 @@ import cors from 'cors';
 import multer from 'multer';
 import xlsx from 'xlsx';
 import fs from 'fs';
+import { v4 as uuidv4 } from 'uuid';
 
 require('dotenv').config();
 
@@ -23,12 +24,12 @@ app.post('/xlsx2json', upload.single('xlsx'), async (req, res) => {
 
     if (xlsxFile) {
 
-      const inputFileName = 'file.xslx';
+      const fileName = `${uuidv4()}.xslx`;
       const buffer = xlsxFile.buffer;
   
-      fs.writeFileSync(inputFileName, buffer);
-      const wb = xlsx.readFile(inputFileName);
-      fs.unlinkSync(inputFileName);
+      fs.writeFileSync(fileName, buffer);
+      const wb = xlsx.readFile(fileName);
+      fs.unlinkSync(fileName);
       res.json(xlsx.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]));
   
     } else {
@@ -47,5 +48,26 @@ app.post('/xlsx2json', upload.single('xlsx'), async (req, res) => {
   }
 });
 
+app.post('/json2xlsx', async (req, res) => {
+  try {
+    var ws = xlsx.utils.json_to_sheet(req.body);
+    const wb = xlsx.utils.book_new();
+    xlsx.utils.book_append_sheet(wb, ws, 'students');
+    const buf = xlsx.write(wb, { type:'buffer', bookType:'xlsx' });
+
+    res.statusCode = 200;
+    res.setHeader('Content-Disposition', 'attachment; filename="SheetJSNode.xlsx"');
+    res.setHeader('Content-Type', 'application/vnd.ms-excel');
+    res.end(buf);
+
+  } catch (error: any) {
+    console.log(error);
+    
+    res.status(error.status ?? 500);
+    res.json({
+      message: error.message ?? 'Internal error',
+    });
+  }
+});
 
 export default app;
